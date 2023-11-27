@@ -276,9 +276,9 @@ def __run_predictions_patch(data: np.ndarray, model, model_outputs: List[str], p
                     elif parameters.swap_training_input and parameters.preprocessing_channels_order == "channels_last":
                         model_input = np.transpose(model_input, axes=(0, 3, 1, 2, 4))
                     # model_input = np.expand_dims(patch, axis=0)
-                    patch_pred = model.run(model_outputs, {"input": model_input})
+                    patch_pred = model.run(None, {"input.1": model_input})
                     # @TODO. Have to test with a non deep supervision model with ONNX, to do array indexing always
-                    if deep_supervision:
+                    if deep_supervision or parameters.training_backend == "Torch":
                         patch_pred = patch_pred[0]
 
                     if parameters.preprocessing_channels_order == "channels_first":
@@ -296,10 +296,10 @@ def __run_predictions_patch(data: np.ndarray, model, model_outputs: List[str], p
         final_result = final_result[extra_dims[0]:final_result.shape[0] - extra_dims[1],
                        extra_dims[2]:final_result.shape[1] - extra_dims[3],
                        extra_dims[4]:final_result.shape[2] - extra_dims[5], :]
-        # # For PyTorch models, the softmax operation is not often included -- should add a specific flag for it.
-        # if np.max(final_result.flatten()) > 1.0:
-        #     from ..Utils.volume_utilities import softmax
-        #     final_result = softmax(final_result)
+        # For PyTorch models, the softmax operation is not often included -- should add a specific flag for it.
+        if not parameters.training_softmax_layer_included:
+            from ..Utils.volume_utilities import softmax
+            final_result = softmax(final_result)
 
     except Exception as e:
         logging.error(

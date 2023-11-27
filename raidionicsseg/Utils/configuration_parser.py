@@ -112,20 +112,26 @@ class ConfigResources:
                 self.runtime_lungs_mask_filepath = self.config['Mediastinum']['lungs_segmentation_filename'].split('#')[0].strip()
 
     def __parse_content(self):
+        self.__parse_default_content()
+        self.__parse_pre_processing_content()
+        self.__parse_training_content()
+        self.__parse_MRI_content()
+        self.__parse_CT_content()
+
+    def __parse_default_content(self):
+        self.training_backend = 'TF'
         if self.pre_processing_config.has_option('Default', 'imaging_modality'):
             param = self.pre_processing_config['Default']['imaging_modality'].split('#')[0].strip()
             modality = get_type_from_string(ImagingModalityType, param)
             if modality == -1:
                 raise AttributeError('')
-
             self.imaging_modality = modality
         else:
             raise AttributeError('')
 
-        self.__parse_pre_processing_content()
-        self.__parse_training_content()
-        self.__parse_MRI_content()
-        self.__parse_CT_content()
+        if self.pre_processing_config.has_option('Default', 'training_backend'):
+            if self.pre_processing_config['Default']['training_backend'].split('#')[0].strip() != '':
+                self.training_backend = self.pre_processing_config['Default']['training_backend'].split('#')[0].strip()
 
     def __parse_training_content(self):
         self.training_nb_classes = None
@@ -135,6 +141,7 @@ class ConfigResources:
         self.training_patch_offset = None
         self.training_optimal_thresholds = None
         self.training_deep_supervision = False
+        self.training_softmax_layer_included = True
 
         if self.pre_processing_config.has_option('Training', 'nb_classes'):
             self.training_nb_classes = int(self.pre_processing_config['Training']['nb_classes'].split('#')[0])
@@ -162,6 +169,10 @@ class ConfigResources:
         if self.pre_processing_config.has_option('Training', 'deep_supervision'):
             if self.pre_processing_config['Training']['deep_supervision'].split('#')[0].strip() != '':
                 self.training_deep_supervision = True if self.pre_processing_config['Training']['deep_supervision'].split('#')[0].strip().lower() == 'true' else False
+
+        if self.pre_processing_config.has_option('Training', 'softmax_layer_included'):
+            if self.pre_processing_config['Training']['softmax_layer_included'].split('#')[0].strip() != '':
+                self.training_softmax_layer_included = True if self.pre_processing_config['Training']['softmax_layer_included'].split('#')[0].strip().lower() == 'true' else False
 
     def __parse_pre_processing_content(self):
         self.preprocessing_library = 'nibabel'
