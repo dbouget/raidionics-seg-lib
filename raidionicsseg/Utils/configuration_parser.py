@@ -10,6 +10,7 @@ class ImagingModalityType(Enum):
 
     CT = 0, 'CT'
     MRI = 1, 'MRI'
+    US = 2, 'US'
 
     def __str__(self):
         return self.string

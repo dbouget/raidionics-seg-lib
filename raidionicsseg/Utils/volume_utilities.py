@@ -29,7 +29,8 @@ def input_file_category_disambiguation(input_filename: str) -> str:
     image_type = image.GetPixelIDTypeAsString()
     array = sitk.GetArrayFromImage(image)
 
-    if len(np.unique(array)) > 255 or np.max(array) > 255 or np.min(array) < -1:
+    # Loosening the check on intensity values for some US/MR scans with values within [0, 255]
+    if len(np.unique(array)) > 10 or np.max(array) > 255 or np.min(array) < -1:
         category = "Volume"
     else:
         category = "Annotation"
@@ -96,7 +97,8 @@ def __intensity_normalization_MRI(volume, parameters):
 
 
 def intensity_normalization(volume, parameters):
-    if parameters.imaging_modality == ImagingModalityType.CT:
+    # @TODO. Should not be based on modality, just if intensity clipping range or values is used in the config...
+    if parameters.imaging_modality == ImagingModalityType.CT or parameters.imaging_modality == ImagingModalityType.US:
         return __intensity_normalization_CT(volume, parameters)
     elif parameters.imaging_modality == ImagingModalityType.MRI:
         return __intensity_normalization_MRI(volume, parameters)
