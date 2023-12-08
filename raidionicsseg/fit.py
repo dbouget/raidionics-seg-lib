@@ -8,7 +8,7 @@ import platform
 import multiprocessing as mp
 from .Utils.configuration_parser import *
 from .PreProcessing.pre_processing import prepare_pre_processing
-from .Inference.predictions_torch import run_predictions
+from .Inference.predictions import run_predictions
 from .Inference.predictions_reconstruction import reconstruct_post_predictions
 from .Utils.io import dump_predictions, dump_classification_predictions
 from .Utils.configuration_parser import ConfigResources
@@ -73,7 +73,7 @@ def __segment(pre_processing_parameters: ConfigResources) -> None:
     logging.info('LOG: Segmentation - 4 steps.')
     overall_start = start = time.time()
 
-    model_path = os.path.join(selected_model, 'model.pt')
+    model_path = os.path.join(selected_model, 'model.onnx')
     if not os.path.exists(model_path):
         raise ValueError('Requested model cannot be found on disk at location: \'{}\'.'.format(model_path))
     try:
