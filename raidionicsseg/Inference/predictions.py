@@ -1,7 +1,6 @@
 import logging
 import traceback
 import numpy as np
-import torch
 import onnxruntime as rt
 from typing import List
 from math import ceil

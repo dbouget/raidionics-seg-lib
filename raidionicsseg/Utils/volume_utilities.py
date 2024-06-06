@@ -63,10 +63,16 @@ def __intensity_normalization_CT(volume, parameters):
     result[volume < parameters.intensity_clipping_values[0]] = parameters.intensity_clipping_values[0]
     result[volume > parameters.intensity_clipping_values[1]] = parameters.intensity_clipping_values[1]
 
-    min_val = np.min(result)
-    max_val = np.max(result)
-    if (max_val - min_val) != 0:
-        result = (result - min_val) / (max_val - min_val)
+    if parameters.normalization_method == 'zeromean':
+        mean_val = np.mean(result)
+        var_val = np.std(result)
+        tmp = (result - mean_val) / var_val
+        result = tmp
+    elif parameters.normalization_method == 'default':
+        min_val = np.min(result)
+        max_val = np.max(result)
+        if (max_val - min_val) != 0:
+            result = (result - min_val) / (max_val - min_val)
 
     return result
 
