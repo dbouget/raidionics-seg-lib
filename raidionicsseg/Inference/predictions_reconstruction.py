@@ -130,12 +130,14 @@ def __resample_predictions(predictions, crop_bbox, nib_volume, resampled_volume,
         if reconstruction_method == 'probabilities' or reconstruction_method == 'thresholding':
             resampled_predictions = np.zeros(nib_volume.get_fdata().shape + (nb_classes,)).astype(labels_type)
             for c in range(0, nb_classes):
-                img = nib.Nifti1Image(new_data[..., c].astype(labels_type), affine=resampled_volume.affine)
+                img = nib.Nifti1Image(new_data[..., c].astype(labels_type), affine=resampled_volume.affine,
+                                      header=resampled_volume.header)
                 resampled_channel = resample_from_to(img, nib_volume, order=order)
                 resampled_predictions[..., c] = resampled_channel.get_fdata()
         else:
             resampled_predictions = np.zeros(nib_volume.get_fdata().shape).astype(labels_type)
-            img = nib.Nifti1Image(new_data.astype(labels_type), affine=resampled_volume.affine)
+            img = nib.Nifti1Image(new_data.astype(labels_type), affine=resampled_volume.affine,
+                                  header=resampled_volume.header)
             resampled_channel = resample_from_to(img, nib_volume, order=order)
             resampled_predictions = resampled_channel.get_fdata()
 
