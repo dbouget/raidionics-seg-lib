@@ -12,8 +12,9 @@ from ..Utils.io import load_nifti_volume, convert_and_export_to_nifti
 from ..Utils.configuration_parser import ConfigResources
 
 
-def crop_mediastinum_volume(filepath: str, volume: np.ndarray, new_spacing: Tuple[float], storage_path: str,
-                            parameters: ConfigResources) -> Tuple[np.ndarray, List[int]]:
+def crop_mediastinum_volume(volume: np.ndarray, new_spacing: Tuple[float], storage_path: str,
+                            parameters: ConfigResources, crop_bbox: List[int] | None=None,
+                            crop_mask: np.ndarray | None=None) -> Tuple[np.ndarray, List[int], None | np.ndarray]:
     """
     Performs different background cropping inside a mediastinal CT volume, as defined by the 'crop_background' stored
     in a model preprocessing configuration file.
@@ -22,8 +23,6 @@ def crop_mediastinum_volume(filepath: str, volume: np.ndarray, new_spacing: Tupl
 
     Parameters
     ----------
-    filepath : str
-        Filepath of the input volume (CT or MRI) to use.
     volume : np.ndarray
         .
     new_spacing : Tuple[float]
@@ -32,6 +31,10 @@ def crop_mediastinum_volume(filepath: str, volume: np.ndarray, new_spacing: Tupl
         Destination folder where the results will be stored.
     parameters :  :obj:`ConfigResources`
         Loaded configuration specifying runtime parameters.
+    crop_bbox:
+
+    crop_mask:
+
     Returns
     -------
     np.ndarray
@@ -40,14 +43,28 @@ def crop_mediastinum_volume(filepath: str, volume: np.ndarray, new_spacing: Tupl
         Indices of a bounding region within the volume for additional cropping (e.g. coordinates around the head,
         or tightly around the brain only).
         The bounding region is expressed as: [minx, miny, minz, maxx, maxy, maxz].
+    np.ndarray | None
+
     """
     if parameters.crop_background == 'minimum':
-        return mediastinum_clipping(volume, parameters)
+        return mediastinum_clipping(volume, parameters, crop_bbox)
     elif parameters.crop_background == 'brain_clip' or parameters.crop_background == 'brain_mask':
-        return mediastinum_clipping_DL(filepath, volume, new_spacing, storage_path, parameters)
+        return crop_mediastinum_background_advanced(volume, new_spacing, storage_path, parameters, crop_bbox, crop_mask)
 
 
-def mediastinum_clipping(volume, parameters):
+def mediastinum_clipping(volume, parameters, crop_bbox):
+    """
+
+    Parameters
+    ----------
+    volume
+    parameters
+    crop_bbox
+
+    Returns
+    -------
+
+    """
     intensity_threshold = -250
     airmetal_mask = deepcopy(volume)
     airmetal_mask[airmetal_mask > intensity_threshold] = 0
@@ -90,10 +107,25 @@ def mediastinum_clipping(volume, parameters):
     cropped_volume = volume[crop_bbox[0]:crop_bbox[3], crop_bbox[1]:crop_bbox[4], crop_bbox[2]:crop_bbox[5]]
 
     print('Cropped mediastinum values: {}'.format(lungs_boundingbox))
-    return cropped_volume, crop_bbox
+    return cropped_volume, crop_bbox, None
 
 
-def mediastinum_clipping_DL(filepath, volume, new_spacing, storage_path, parameters):
+def crop_mediastinum_background_advanced(volume, new_spacing, storage_path, parameters, crop_bbox=None, crop_mask=None):
+    """
+    No multiple inputs case for the mediastinum now, so leaving unsed the crop_bbox and crop_mask
+    Parameters
+    ----------
+    volume
+    new_spacing
+    storage_path
+    parameters
+    crop_bbox
+    crop_mask
+
+    Returns
+    -------
+
+    """
     if not parameters.runtime_lungs_mask_filepath and not os.path.exists(parameters.runtime_lungs_mask_filepath):
         lung_config_filename = os.path.join(os.path.dirname(parameters.config_filename), 'lungs_main_config.ini')
         new_parameters = configparser.ConfigParser()
@@ -130,4 +162,4 @@ def mediastinum_clipping_DL(filepath, volume, new_spacing, storage_path, paramet
     cropped_volume = volume[min_row:max_row, min_col:max_col, min_depth:max_depth]
     bbox = [min_row, min_col, min_depth, max_row, max_col, max_depth]
 
-    return cropped_volume, bbox
+    return cropped_volume, bbox, lungs_mask
